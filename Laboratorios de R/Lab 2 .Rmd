@@ -1,0 +1,47 @@
+---
+title: "LAB 2 - TALLER DE APLICACION DE ENDOGENIDAD"
+author: "David Sanchez"
+date: "8/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(fst)
+saber11=read_fst("/Users/davidsanchez/Downloads/saber11at.fst") #archivo fst cargado
+library(dplyr)
+resumen_data <- function(df) {
+  data.frame(
+    col_name = colnames(df),
+    col_index = 1:ncol(df),
+    col_class = sapply(df, class),
+    row.names = NULL
+  )
+} #mediante esta funcion se obine el tipo de datos
+resumen_data(saber11)
+saber11s<-saber11%>%select(c(75,42,34,14,18,3))
+
+saber11s<-saber11s%>%mutate_if(is.character,as.factor)%>%na.omit()
+saber11s
+resumen_data(saber11s)
+library(knitr)
+mpunt<-saber11s%>%group_by(cole_naturaleza)%>%summarise(mpunt=mean(punt_global,na.rm=TRUE),
+                          sdpun=sd(punt_global,na.rm=TRUE)
+                          )
+mpunt
+library(ggplot2)
+
+graphdata=ggplot(saber11s,aes(x=punt_global, fill=factor(cole_naturaleza))) + geom_density(alpha=0.5)
+graphdata
+#estimacion del modelo
+regresion=lm(punt_global~cole_naturaleza, data=saber11s)
+summary(regresion)
+library(corrplot)
+correlacion = corrplot(regresion, )
+
+
+```

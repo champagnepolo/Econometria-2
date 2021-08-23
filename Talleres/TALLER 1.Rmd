@@ -1,0 +1,52 @@
+---
+title: "TALLER 3"
+author: "David Sanchez"
+date: "8/19/2021"
+output: html_document
+---
+
+
+```{r}
+load("/Users/davidsanchez/Downloads/wagew.rda")
+library(ggplot2)
+wagew$logw=log(wagew$impa)
+graph1.1=ggplot(wagew, aes(sy, logw)) + geom_point(size=2)+geom_smooth(method=lm)
+graph1.1
+```
+```{r}
+###hacer factor
+library(dplyr)
+fact<-wagew
+fact<-fact%>%mutate_if(is.character,as.factor)%>%na.omit()
+
+###densidad
+densidad <- density(wagew$logw)
+graphdens=ggplot(fact, aes(x=logw, color=factor(p6020))) +
+  geom_density() +xlim(12, 16)
+graphdens
+```
+
+```{r}
+###creacion de variable exp
+wagew$exp=wagew$p6040 - wagew$sy - 6
+###0sfix
+data=wagew
+data[ data == 0] <-NA
+##sexdummy
+data$mujer=ifelse(data$p6020==2, 1, 0)
+###exp^2
+data$exp2=data$exp^2
+###modelo
+linealmodel=lm(log(impa)~sy+exp+exp2+mujer, data)
+linealmodel
+summary(linealmodel)
+##tabla
+library(flextable)
+tabla=as_flextable(linealmodel)
+tabla2=theme_zebra(tabla,
+  odd_header = "#CFCFCF",
+  odd_body = "#EFEFEF",
+  even_header = "transparent",
+  even_body = "transparent")
+tabla2
+```
