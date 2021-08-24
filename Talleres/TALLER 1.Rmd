@@ -4,7 +4,7 @@ author: "David Sanchez - Discord: lasagna#6231"
 date: "8/19/2021"
 output: html_document
 ---
-Este mismo codigo se puede encontrar en https://raw.githack.com/champagnepolo/Econometria-2/main/Talleres/TALLER-1.html, y su respectivo Rmd en https://github.com/champagnepolo/Econometria-2/blob/main/Talleres/TALLER%201.Rmd. 
+Este mismo HTML se puede encontrar en https://raw.githack.com/champagnepolo/Econometria-2/main/Talleres/TALLER-1.html, y su respectivo Rmd en https://github.com/champagnepolo/Econometria-2/blob/main/Talleres/TALLER%201.Rmd. 
 
 
 <h1>PRIMERA PARTE </h1>
