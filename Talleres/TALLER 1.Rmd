@@ -1,11 +1,18 @@
 ---
-title: "TALLER 3"
-author: "David Sanchez"
+title: "TALLER 1"
+author: "David Sanchez - Discord: lasagna#6231"
 date: "8/19/2021"
 output: html_document
 ---
+Este mismo codigo se puede encontrar en https://raw.githack.com/champagnepolo/Econometria-2/main/Talleres/TALLER-1.html, y su respectivo Rmd en https://github.com/champagnepolo/Econometria-2/blob/main/Talleres/TALLER%201.Rmd. 
 
 
+<h1>PRIMERA PARTE </h1>
+
+<h4>1. Antes de realizar la estimación, lleve a cabo el siguiente análisis gráfico	</h4>
+
+<h1>1.1</h1>
+Haga un gráfico de dispersión (scatter) donde tenga los años de escolaridad en el eje X y ln(w) en el eje Y (use ggplot con geom_point). Interprete.
 ```{r}
 load("/Users/davidsanchez/Downloads/wagew.rda")
 library(ggplot2)
@@ -13,25 +20,37 @@ wagew$logw=log(wagew$impa)
 graph1.1=ggplot(wagew, aes(sy, logw)) + geom_point(size=2)+geom_smooth(method=lm)
 graph1.1
 ```
+<h1>Interpretacion de punto 1.1</h1>
+
+Los años de escolaridad están relacionados de forma positiva con el salario de las personas, se puede encontrar, gráficamente, que, a los 11 años de escolaridad, se pueden encontrar salarios tanto bajos como altos, siendo que esto guarda la lógica, siendo la edad para en la que se entra a la población económica activa. Estos valores son dispersos entre los años de escolaridad y sus salarios logarítmicos, siendo que entre mas pasan los años, estos puntos dejan de ser dispersos, siendo que del año 22 hacia arriba hay menos dispersión entre los datos, dando como una interpretación teórica, de que los años de estudio, se ven correlacionados con su ingreso mensual, de manera positiva.
+
+<h1>1.2</h1>
+
+En una gráfica superponga la dsitribución empírica, densidad, de ln(w) para hombres y para mujeres (para compara mejor limite el rango de valores del eje X entre 12 y 16). Interprete los resultados
+
 ```{r}
 ###hacer factor
 library(dplyr)
-fact<-wagew
-fact<-fact%>%mutate_if(is.character,as.factor)%>%na.omit()
+fact=wagew
+fact=fact%>%mutate_if(is.character,as.factor)%>%na.omit()
 
 ###densidad
-densidad <- density(wagew$logw)
-graphdens=ggplot(fact, aes(x=logw, color=factor(p6020))) +
+densidad = density(wagew$logw)
+graphdens=ggplot(fact, aes(x=logw, color=factor(p6020, labels = c("hombres", "mujeres")))) +
   geom_density() +xlim(12, 16)
 graphdens
 ```
+<h1>Interpretacion de punto 1.2</h1>
 
+Al realizar esta función de densidad, nos podemos encontrar que tantos hombres como mujeres tienen comportamientos similares ante sus salarios mensuales, encontrándose una concentración de salarios para el logimpa de 14 para hombres y mujeres, siendo esta su media. Se debe hacer la notación de que las mujeres se concentran en valores por debajo de la media, mientras que los hombres se encuentran en valores superiores a la media. 
+
+<h4>2. Realice la estimación del modelo y reporte los resultados en una tabla bien ordenada. Interprete los coeficientes en términos de dirección, magnitud y significancia</h4>
 ```{r}
 ###creacion de variable exp
 wagew$exp=wagew$p6040 - wagew$sy - 6
 ###0sfix
 data=wagew
-data[ data == 0] <-NA
+data[ data == 0] =NA
 ##sexdummy
 data$mujer=ifelse(data$p6020==2, 1, 0)
 ###exp^2
@@ -50,3 +69,211 @@ tabla2=theme_zebra(tabla,
   even_body = "transparent")
 tabla2
 ```
+<h1>Interpretacion de punto 2</h1>
+
+2.	Se puede encontrar una significancia del modelo del 99%, siendo que sus errores estándar de los parámetros son demasiado bajos, esto se puede ver bien apreciado en su p-valor de 0.000 en cada uno de los parámetros. Este modelo usa una semielasticidad de los ingresos respecto a sus parámetros. Sus interpretaciones se pueden dar de la siguiente manera:
+
+•	Se puede encontrar que el ingreso laboral mensual cambia en 11,7% unidades ante un año que se agregue de escolaridad, esto guarda lógica teórica debido a que se requerirá trabajadores tecnificados para tener mayores rendimientos de producción, siendo un trabajador mas atractivo del resto para un empresario. Dándose una relación positiva entre años de escolaridad y el salario mensual. 
+
+•	Se realiza una variable de experiencia la cual toma, edad, menos años de educación y 6 años de iniciación, para esta variable encontramos que también tiene una relación positiva con el salario mensual, siendo que el salario mensual cambia en 3,5% unidades ante un cambio de un año de experiencia. Esto guarda lógica, siendo que un trabajador experimentado, representa, bajo el pensamiento económico moderno, uno trabajador que rendirá mas allá que un trabador sin experiencia, esto debido a que ya conoce mas de la técnica de producción y este la perfecciona a su manera para hacer rendir mas su trabajo. 
+
+Con la experiencia elevada en 2 (exp2) se encuentra que al aumentar la experiencia, se tiene una reducción del 0,04085% unidades del salario mensual. Dándose una relación negativa, se puede argumentar en la manera de que esta experiencia aumenta el salario se hace decrecientes conforme se agrega mas años de experiencia, ya que la necesidad de un trabajador mas experimentado en cierto punto, se va haciendo irrelevante si la actividad no requiere conocimiento mas complejos. 
+
+•	Para el caso del genero, se genera una variable dummy, siendo 1 mujer y 0 hombre, se encuentra que el ingreso mensual es 21% menor que al de los hombres, encontrándose el fenómeno de la brecha de genero, de que se deprecia el trabajo de la mujer solo por el hecho de su genero. 
+
+
+<h4>3. ¿El coeficiente estimado βˆ tiene interpretación causal? Explique. ¿El coeficiente estimado βˆ tiene interpretación causal? Explique. </h4>
+
+Para comprobar la causalidad de beta 1 estimado, tenemos que comprobar en primer lugar el supuesto de exogeneidad estricta, donde se debe cumplir que la variable es independiente de la perturbación aleatoria del modelo. Para hacer cumplir de este supuesto se es menester no omitir ninguna variable relevante para explicar el modelo, de esta manera dándole robustez. Se puede apreciar en la practica, que el modelo incluye las variables relevantes para explicar el crecimiento del ingreso mensual, siendo que no los cambios de los salarios explicados por los años de escolaridad son únicamente su parámetro y no otras variables omitidas del modelo. Teniendo en cuenta que, otros datos que se prestan en la base de datos puede dar problemas de simultaneidad, tal como es el caso de los años de escolaridad y el ultimo año aprobado o con problemas de fuerte correlación entre variables como la edad y el nivel de experiencia.  Se puede deducir que no hay problemas de medición, ya que no hay incentivos para mentir al dar estos datos, la población no podría tener una ganancia significativa al mentir, entonces preferirán decir el dato exacto, dando un reporte fiable. 
+
+```{r}
+linealmodel2=lm(log(impa)~sy+exp+exp2+mujer+p6040, data)
+summary(linealmodel2)
+summary(linealmodel)
+
+```
+<h1>SEGUNDA PARTE </h1>
+
+MODELO SENCILLO:
+```{r}
+library(mvtnorm)
+N=10000 
+coefs=cbind("betagorro1" = numeric(1000), "betagorro2" = numeric(1000)) 
+set.seed(1) 
+X=rmvnorm(N, c(50, 100), sigma = cbind(c(10, 2.5), c(2.5, 10))) 
+e=rnorm(N, sd = 5)
+Y=5 + 0.5 * X[, 1] + e
+
+xdf=data.frame(X,Y)
+dfs=sample(c(TRUE,FALSE),nrow(xdf),replace=TRUE,prob=c(0.01,0.99)) 
+dfs=xdf[dfs,]
+lm2=lm(Y~X1, data=dfs)
+summary(lm2)
+```
+El x1 del modelo no presenta cambios sustanciales al igual que su error estandar, aunque el valor del intercepto cambio sustancialmente, lo cual no permite argumentar de que no hay variables relevantes omitidas. 
+MODELO REP 1000
+```{r}
+N=10000 
+coefs=cbind("betagorro2.1" = numeric(1000), "betagorro2.2" = numeric(1000)) 
+set.seed(1) 
+X=rmvnorm(N, c(50, 100), sigma = cbind(c(10, 2.5), c(2.5, 10))) 
+e=rnorm(N, sd = 5)
+Y=5 + 0.5 * X[, 1] + e
+reps=1000 
+for (i in 1:reps){
+  df=sample(c(TRUE,FALSE),nrow(xdf),replace=TRUE,prob=c(0.1,0.9)) 
+  df=xdf[df,]
+  lm3=lm(Y~X1,data=df)
+  lm3
+  coefs[i,]=coef(lm3)[-1]  
+} 
+tabladecoeficientes=data.frame(coefs)
+head(tabladecoeficientes)
+
+```
+Promedio de beta estimado
+```{R}
+mean(tabladecoeficientes$betagorro2.1)
+```
+Grafico de distribucion empirica 
+```{r}
+ggplot(tabladecoeficientes,aes(x=betagorro2.1))+geom_density(fill="red",alpha=0.4)+
+  geom_vline(xintercept=mean(tabladecoeficientes$betagorro2.1),linetype=4)+
+  labs(x=expression(beta[1]*estimado))
+```
+
+Se puede deducir que este parametro no seria insegado, ya que la mayoria de valores se ubican en torno 0.4922, el cual es el valor del modelo poblacional, obtenido de la media de 1000 experimentos. 
+
+NUEVO VALOR DE COV(X1, X2).
+```{r}
+N=10000 
+coefs=cbind("betagorro2.1" = numeric(1000), "betagorro2.2" = numeric(1000)) 
+set.seed(1) 
+X=rmvnorm(N, c(50, 100), sigma = cbind(c(10, 0), c(0, 10))) 
+e=rnorm(N, sd = 5)
+Y=5 + 0.5 * X[, 1] + 3 * X[, 2] + e
+xdf=data.frame(X,Y)
+dfs=sample(c(TRUE,FALSE),nrow(xdf),replace=TRUE,prob=c(0.01,0.99)) 
+dfs=xdf[dfs,]
+lm(Y~X1+X2, data=dfs)
+reps=1000 
+for (i in 1:reps){
+  dfs=sample(c(TRUE,FALSE),nrow(xdf),replace=TRUE,prob=c(0.01,0.99)) 
+  dfs=xdf[dfs,]
+  ols=lm(Y~X1+X2,data=dfs) 
+  coefs[i,]=coef(ols)[-1]  
+} 
+tabladecoef=data.frame(coefs)
+head(tabladecoef)
+mean(tabladecoef$betagorro2.1)
+```
+```{r}
+ggplot(tabladecoef,aes(x=betagorro2.1))+geom_density(fill="red",alpha=0.4)+
+  geom_vline(xintercept=mean(tabladecoef$betagorro2.1))+
+  labs(x=expression(beta[1]*estimado)) 
+```
+Dado que los valores de los estimadores se encuentran cercanos a 0,5, el parametro poblacional es igual al promedio de parametros por lo cual se puede afirmar que es insesgado. 
+
+MODELO DE 20 DATOS
+```{r}
+N=10000
+coefs=cbind("betagorrob.1.1" = numeric(1000), "betagorrob.1.2" = numeric(1000)) 
+set.seed(1) 
+X=rmvnorm(N, c(50, 100), sigma = cbind(c(10, 2.5), c(2.5, 10))) 
+e=rnorm(N, sd = 5)
+Y=5 + 0.5 * X[, 1] + 3 * X[, 2] + e
+
+xdf=data.frame(X,Y)
+dfs=sample(c(TRUE,FALSE),nrow(xdf),replace=TRUE,prob=c(0.002,0.998)) 
+dfs=xdf[dfs,]
+
+modelo20=lm(Y~X1+X2,data=dfs)
+modelo20
+```
+#Varianza del estimador
+```{r}
+mediax1=mean(dfs$X1)
+SST=sum((dfs$X1-mediax1)^2)
+Rsqrx1=summary(lm(X1~X2,data=dfs))$r.squared
+uhat=modelo20$residuals
+sigmahat=(sum(uhat^2))/(modelo20$df.residual)
+varest=sigmahat/(SST*(1-Rsqrx1))
+varest
+```
+
+###error estandar 
+```{r}
+errorest=varest^(1/2)
+errorest
+```
+
+Se encuentra un error y varianza menor que el anterior modelo, esto se puede ver explicado a tomar una muestra de la poblacion mas pequeña, esto hara que no haya tanta variacion, lo cual no permite una buena estimacion
+
+VARIANZA TRIPLICADA
+```{r}
+N=10000
+coefs=cbind("betagorrob.2.1" = numeric(1000), "betagorrob.2.2" = numeric(1000)) 
+set.seed(1) 
+X=rmvnorm(N, c(50, 100), sigma = cbind(c(10, 7.5), c(7.5, 10))) 
+e=rnorm(N, sd = 5)
+Y=5 + 0.5 * X[, 1] + 3 * X[, 2] + e
+
+xdf=data.frame(X,Y)
+dfs=sample(c(TRUE,FALSE),nrow(xdf),replace=TRUE,prob=c(0.01,0.99)) 
+dfs=xdf[dfs,]
+
+modelox3=lm(Y~X1+X2,data=dfs)
+modelox3
+```
+#Varianza del estimador
+```{r}
+mediax1=mean(dfs$X1)
+SST=sum((dfs$X1-mediax1)^2)
+Rsqrx1=summary(lm(X1~X2,data=dfs))$r.squared
+uhat=modelox3$residuals
+sigmahat=(sum(uhat^2))/(modelox3$df.residual)
+varest2=sigmahat/(SST*(1-Rsqrx1))
+varest2
+```
+
+###error estandar 
+```{r}
+errorest=varest2^(1/2)
+errorest
+```
+
+Dado que existe una mayor covarianza entre las variables, al generar un modelo de X1 con respecto al resto a X2, nos da un mayor R^2, haciendo el denominador de la varianza mas pequeño y siendo esta un valor mayor, al igual que el error estandar. 
+
+TAMANO PROMEDIO 20
+```{r}
+N=10000
+coefs=cbind("betagorrob.3.1" = numeric(1000), "betagorrob.3.2" = numeric(1000)) 
+set.seed(1) 
+X=rmvnorm(N, c(50, 100), sigma = cbind(c(10, 7.5), c(7.5, 10))) 
+e=rnorm(N, sd = 5)
+Y=5 + 0.5 * X[, 1] + 3 * X[, 2] + e
+
+xdf=data.frame(X,Y)
+dfs=sample(c(TRUE,FALSE),nrow(xdf),replace=TRUE,prob=c(0.002,0.998)) 
+dfs=xdf[dfs,]
+
+modelomean=lm(Y~X1+X2,data=dfs)
+modelomean
+```
+#Varianza del estimador
+```{r}
+mediax1=mean(dfs$X1)
+SST=sum((dfs$X1-mediax1)^2)
+Rsqrx1=summary(lm(X1~X2,data=dfs))$r.squared
+uhat=modelomean$residuals
+sigmahat=(sum(uhat^2))/(modelomean$df.residual)
+varest3=sigmahat/(SST*(1-Rsqrx1))
+varest3
+```
+
+###error estandar 
+```{r}
+errorest=varest3^(1/2)
+errorest
+```
+Nuevamente se encuentra valores de varianza del estimador y error estandar bastante altos para el estimador, esto debido a la reduccion de la muestra y la alta covarianza entre las variables independientes.
