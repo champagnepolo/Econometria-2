@@ -1,0 +1,362 @@
+---
+title: "Taller 2"
+author: "David Sanchez - Discord: lasagna#6231"
+date: "11/4/2021"
+output: 
+ html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: spacelab
+    highlight: kate
+---
+
+```{r setup_prog, include = FALSE, cache = FALSE}
+knitr::opts_chunk$set(
+  comment = NA, 
+  warning = FALSE, 
+  message = FALSE
+    )
+library(fontawesome)
+library(ggplot2)
+library(dplyr)
+library(forecast)
+library(ggthemes)
+library(flextable)
+library(fpp3)
+library(ggpubr)
+library(dynlm)
+```
+
+Este mismo código se puede encontrar en https://raw.githack.com/champagnepolo/Econometria-2/main/Talleres/taller.html, y su respectivo Rmd en https://github.com/champagnepolo/Econometria-2/blob/main/Talleres/taller.Rmd.
+
+# Tendencia 
+
+Considere el siguiente proceso
+
+$$\tag{1}y_t=\alpha_0 + \alpha_1 t + \epsilon_t$$
+Donde $\epsilon_t$es ruido blanco.
+
+```{r}
+t=seq(from=1,to=100,by=1)
+set.seed(123)
+e=rnorm(100)
+a0=1
+a1=0.5
+df=data.frame(t,e)
+df$y=a0+a1*t+e
+ggplot(df,aes(x=t,y=y))+geom_line()+theme_minimal()
+```
+
+Si examina la ACF de este proceso se dará cuenta que no exhibe dependencia débil
+
+```{r}
+ggAcf(df$y)
+```
+
+## Ejercicio 
+Para el proceso (1) encuentre $E(yt)$ y $Var(yt)$ A partir de lo anterior explique porque el proceso no es estacionario en covarianza
+
+Se puede iterar el proceso de media y varianza, desarrollandose a continuacion
+
+$$y_t=\alpha_0 + \alpha_1 t + \epsilon_t$$
+$$E(y_t)= \alpha_0 + t\alpha_1$$
+$$\dfrac{\delta E(y_t)}{\delta t}= \alpha_1 \neq 0$$
+Exisitiendo una clata dependencia temporal de la media, violando la primera caracterisitica de un modelo estacionario. 
+
+$$Var(y_t) = E ((y_t - E(Y_t))^2) $$
+$$Var(y_t) = E ((\alpha_0 + \alpha_1t+\epsilon_t)-E(\alpha_0 + \alpha_1t+\epsilon_t)^2) $$
+$$Var(y_t) = E ((\alpha_0 + \alpha_1t+\epsilon_t-\alpha_0 - \alpha_1t -\epsilon_t)^2) $$
+$$Var(y_t) = E (\epsilon_t^2) $$
+$$Var(y_t) = \sigma^2 $$ 
+
+Esto nos quiere decir que unicamente se viola una caracteristica de un proceso estacionario, ya que la media no es constante pero su varianza si.
+
+Ahora, el proceso anterior se amplía con un término auto regresivo de orden 1, AR(1), con $−1<ϕ<1$, así
+
+$$\tag{2}y_t=\alpha_0 + \alpha_1 t + ϕy_{t-1} + \epsilon_t$$
+
+```{r}
+phi=-0.7
+library(fpp3)
+df=as_tsibble(df,index=t)
+df=df%>%mutate(ytar1=a0+a1*t+phi*lag(y,n=1L)+e)
+ggplot(df,aes(y=ytar1,x=t))+geom_line()+theme_minimal()
+```
+
+Como se observa, esta serie es muy similar a la anterior. Si calcula y gráfica la ACF obtiene
+
+```{r}
+ggAcf(df$ytar1)
+```
+
+
+## Ejercicio 
+
+Para el proceso (2) encuentre $E(yt)$ y $Var(yt)$ A partir de lo anterior explique porque el proceso no es estacionario en covarianza
+
+
+## Ejercicio
+
+Simule nuevamente el proceso (2) pero con $\alpha_1=0$ Grafique la linea temporal y la ACF. Calcule la media, la varianza y las auto correlaciones para este proceso ¿Es estacionario?
+
+Nuevamente por proceso de iteracion, se resuelve.
+
+$$y_1=\alpha_0+\phi y_0 + \epsilon_1$$
+$$y_2=\alpha_0+\epsilon_2+\phi (\alpha_0+\phi y_0+\epsilon_1)$$ 
+$$y_3=\alpha_0+\epsilon_3+\phi (\alpha_0+\epsilon_2+\phi (\alpha_0+\epsilon_1+\phi y_0))$$
+$$y_t=\alpha_0(1+\phi+\phi^2+(...)+\phi^{t-1})+\phi^t y_0 + \epsilon_t + \phi \epsilon_{t-1}+(...)$$
+$$y_t=\alpha_0(1-\phi^t/1-\phi)+\phi^t y_0 + \sum_{i=0}^{t-1} \phi^i \epsilon_{t-i}$$
+Asumiendo que t tiende a infinito...
+$$y_t=\alpha_0/(1-\phi)+\sum_{i=0}^\infty \phi^i i$$
+Se encontraria que la media quedaria asi:
+ 
+$$ E(y_t)=\alpha_0/(1-\phi)$$
+Esto la hace independiente al tiempo.
+
+Varianza:
+
+$$Var(y_t)=E[y_t-E(y_t)]^2$$
+$$Var(y_t)=E(\sum_{i=0}^\infty \phi^i\epsilon_{t-i})$$
+$$Var(y_t)=\sigma^2$$
+
+Covarianza:
+
+$$Cov(y_t, y_{t-1})=E[(y_t-E(y_t))(y_{t-1}E(y_{t-1}))]$$
+$$Cov(y_t, y_{t-1})=E[(\sum_{i=0}^\infty \phi^i \epsilon_{t-i})(\sum_{i=0}^\infty \phi^i \epsilon_{t-s-i})]$$
+$$cov(y_t, y_{t-1})= \phi^s \sigma^2 / 1-\phi^2$$ 
+Todas tres resultan independientes al tiempo. Lo que permite comprobar que estamos ante un proceso estacionario. 
+
+
+
+Como se observa, el proceso (2) en ausencia de la tendencia temporal determinista es estacionario. En un caso como estos, basta con eliminar la tendencia, detrending, por medio de una regresión lineal y modelar nuestra serie sin tendencia. Para ello basta con proceder de la siguiente manera
+
+$$\tag{Paso 1}y_t=a_o + a_1t + r_t$$
+$$\tag{Paso 2}y_t- ŷ_t$$
+```{r}
+detrend=lm(ytar1~t,data=df)
+ythat=predict(detrend)
+t=seq(from=2,to=100,by=1) 
+ythat=data.frame(cbind(t,ythat))
+df=merge(df,ythat,all.x=TRUE)
+df=df%>%mutate(yar1=ytar1-ythat)
+ggplot(df,aes(x=t,y=yar1))+geom_line()+theme_minimal()
+ggAcf(df$yar1)
+```
+
+## Ejercicio 
+
+Estime el modelo auto regresivo $y∗t=α_0+ϕy∗_{t−1}+e_t$, donde y∗ es la variable sin la tendencia
+
+```{r}
+dynmlm=dynlm(ytar1~yar1,data=df)
+as_flextable(dynmlm)
+```
+# Tendencia estocástica
+
+Considere ahora el siguiente proceso, caminata aleatoria con deriva
+$$\tag{3}y_t=c+y_{t-1}+\epsilon_t$$
+
+```{r}
+c=0.1
+df=df%>%mutate(yrwd=c*t+cumsum(e))
+ggplot(df,aes(x=t,y=yrwd))+geom_line()+theme_minimal()
+```
+
+## Ejercicio 
+
+Resuelva por iteración el proceso (3) y muestre que la pendiente de la tendencia temporal la determina c
+
+$$\tag{1}y_t=c+y_{t-1}+\epsilon_t$$
+
+$$\tag{2}y_{t+1}=c+(c+y_{t-1}+\epsilon_{t})+\epsilon_{t+1}$$
+$$\tag{3}y_{t+1}=2c+y_{t-1}+e_t+e_{t+1}$$
+$$\tag{4}y_{t+2}=3c+ y_{t-1}+e_t+e_{t+1}+e_{t+2}$$
+$$\tag{5}y_{t+3}=4c+y_{t-1}+e_t+e_{t+1}+e_{t+2}+e_{t+3}$$
+Si este proceso sigue T veces, la formula quedaría de la siguiente forma:
+
+$$\tag{6}y_{t+T}=(t+T)c+y_{t-1}+\sum_{i=1}^{\infty} \epsilon_t$$
+
+Si nos devolvemos nuevamente a la ecuación 1 $y_t=c+y_{t-1}+\epsilon_t$, esta puede ser transformada al cambio de y, quedando de la siguiente manera 
+
+$$\tag{7}y_t-y_{t-1}=y\Delta=c+\epsilon_t $$
+De esta manera podemos llegar a la inferencia de que $y_t$ se deriva hacia arriba o hacia abajo, dependiendo si $c$ es positivo o negativo, afectando así, la dirección de la pendiente.
+
+## Ejercicio 
+
+Modifique el valor de c por uno negativo. Verifique que la tendencia ahora es negativa
+
+```{r}
+c=-0.1
+df=df%>%mutate(yrwd=c*t+cumsum(e))
+ggplot(df,aes(x=t,y=yrwd))+geom_line()+theme_minimal()
+```
+
+Se puede evidenciar gráficamente al momento de colocar $c$ negativo, que este tendrá una tendencia hacia abajo (negativa), a contrario de la gráfica anterior, que esta tendía hacia arriba (positiva).
+
+## Ejercicio
+
+Grafique la ACF. Interprete.
+
+```{r}
+ggAcf(df$yrwd)
+```
+
+Encontramos en la ACF picos estadisticamente significantes al 95% sobre la hipótesis nula de no correlación, para lags hasta de 11, existiendo dependencia débil. Lo que quiere decir que en dicho ejemplo, los choques tienden a afectar por un largo plazo en el tiempo.
+
+## Ejercicio
+
+Para el proceso anterior, caminata aleatoria con deriva, podemos tomar la primera diferencia
+
+$$\Delta y_t=c+e_t$$
+Explique porque al tomar la primera diferencia el proceso es ahora estacionario
+
+<h4>Esperanza</h4>
+
+$$\tag{1}\Delta y_0=c+\epsilon_0$$
+$$\tag{2}\Delta y_1=c+\epsilon_1+\epsilon_0$$
+$$\tag{3}\Delta y_2=c+\epsilon_2+\epsilon_1+\epsilon_0$$
+$$\tag{4}\Delta y_t=c+\sum_{i=1}^{\infty} \epsilon_t$$
+
+$$\tag{6}E(\Delta y_t)=c$$
+<h4>Varianza</h4>
+
+$$\tag{1}Var(\Delta y_t)=E(\Delta y_t-E(\Delta y_t))^2$$
+$$\tag{2}Var(\Delta y_t)=E(c+\sum_{i=1}^{\infty} \epsilon_t-c)^2$$
+$$\tag{3}Var(\Delta y_t)=E(\sum_{i=1}^{\infty} \epsilon_t)^2$$
+$$\tag{4}Var(\Delta y_t)=\sigma^2$$
+<h4>Covarianza</h4>
+$$\sigma_{y_t+y_{t-s}}=Cov(y_t+y_{t-s})=E((\Delta y_t-E(\Delta y_t))(\Delta y_{t-s}-E(\Delta y_{t-s}))$$
+$$\sigma_{y_t+y_{t-s}}=E(c+\sum_{i=1}^{\infty} \epsilon_t-c)(c+\sum_{i=1}^{\infty} \epsilon_{t-s}-c))$$
+$$\sigma_{y_t+y_{t-s}}=E(\sum_{i=1}^{\infty} \epsilon_t)(\sum_{i=1}^{\infty} \epsilon_{t-s}))$$
+
+$$\sigma_{y_t+y_{t-s}}=E(\epsilon_t+\epsilon_{t-1}+\epsilon_{t-3}+...+e_{t-s}+e_{t-s-1}+...)(\epsilon_{t-s}+\epsilon_{t-s-1}+\epsilon_{t-s-3}+...+e_{t-s}+e_{t-s-1}+...))$$
+
+Mediante estas interaciones podemos comprobar las tres caracterisiticas de modelos estacionarios, que basicamente son de que tanto la media y varianza son cosntantes, y que la correlacion dependera de lo largo que se haga el rezago entre periodos pero no del tiempo en el que se calculo dicha covarianza 
+
+# El problema de la regresión espúrea
+Considere los siguientes dos procesos
+
+$$x_t=0.2 + x_{t-1}+\epsilon_t$$
+$$z_t=-0.2 + x_{t-1}+v_t$$
+
+Donde las secuencias ${xt}$ y ${zt}$ corresponden a procesos de caminata aleatoria con deriva, y $ϵt$ es independiente de $υ_t$. Del ejercicio anterior es claro que $x_t$ tiene una tendencia ascendente y $z_t$ una tendencia descendente
+ 
+## Ejercicio
+
+Simule cada uno de los procesos, 100 observaciones, y grafique (su gráfica no necesariamente le queda igual a esta)
+
+```{r}
+veggeta=777
+set.seed(veggeta)
+e=rnorm(100)
+v=rnorm(100)
+t=seq(1,100,by=1)
+a=data.frame(t,e,v)
+a=a%>%mutate(x=0.2*t+cumsum(e),z=-0.2*t+cumsum(v))
+graph1=ggplot(a,aes(x=t,y=x))+geom_line()+theme_minimal()
+graph2=ggplot(a,aes(x=t,y=z))+geom_line()+theme_minimal()
+ggarrange(graph1,graph2,ncol=2)
+```
+
+## Ejercicio
+
+
+
+Estime el modelo $x_t=\beta_0+\beta_1z_t+r_t$, donde $r_t$ es el error. Interprete los resultados ¿Tiene sentido decir que hay una relación significativa entre las dos variables?
+```{r}
+modeloespureo=lm(x~z,a)
+as_flextable(modeloespureo)
+```
+
+
+Se puede apreciar en el modelo ejecutdado, que la variable z tiene una significancia de 99.99% al momento de explicar a la variable x, lo cual es confiable decir que estas guardan una correlacion. 
+
+## Ejercicio 
+
+Examine los residuales de la regresión anterior ¿Se comportan como ruido blanco?
+
+```{r}
+estocastico=modeloespureo$residuals
+graphesto=ggplot(modeloespureo,aes(x=t,y=estocastico))+geom_line()+theme_minimal()
+ggAcf(estocastico)
+```
+
+Un ruido blanco es proceso estocastico que esta caracterizado por que sus valores en dos tiempos diferentes no guardan correlacion estadistica algua. Con la prueba ACF se puede comprobar que este proceso no es ruido blanco en su error, ya que durante sus 20 lags, sus picos alcanzaban la linea de hipotesis nula de autocorrelacion, lo que descarta la posibilidad que este sea un ruido blaco. 
+
+Dicha comprobacion se puede hacer de manera aun mas formal mediante el test de Box-Ljung. 
+
+En dicho test se guarda las hipotesis de la siguiente manera:
+
+H0: Los datos se distribuyen de manera independiente (corr=0)
+
+H1: Los datos no se distribuyen de manera independiente.
+
+```{r}
+testwn=Box.test(modeloespureo$residuals, lag=20, fitdf=0, type="Lj")
+testwn
+```
+
+Con los resultados del test, se puede aprciar que con un p value de 2.2e-16, se puede negar la hipotesis nula a un  99.99% de significancia estadistica, dejando claro que entre estos residuos habra dependencia entre ellos, es decir, no son ruido blanco. 
+
+
+## Ejercicio
+
+Para cada variable tome la primera diferencia y examine su ACF. Ahora, realice la regresión de $Δxt$ contra $Δzt$ ¿Cómo es la relación entre las variables ahora? ¿El error es ruido blanco?. 
+
+```{r}
+deltax=diff(a$x)
+deltaz=diff(a$z)
+
+t=seq(1,99,by=1)
+dfx=data.frame(t, deltax)
+dfz=data.frame(t, deltaz)
+graphdeltax=ggplot(dfx,aes(x=t,y=deltax))+geom_line()+theme_minimal()
+graphdeltaz=ggplot(dfz,aes(x=t,y=deltaz))+geom_line()+theme_minimal()
+ggarrange(graphdeltax, graphdeltaz)
+```
+
+## Ejercicio
+
+Gráficamente pareciera que los datos, en ambos casos,  convergerán a la media por el pasar del tiempo, siendo esta constante a lo largo del tiempo, al igual que su varianza, pudiéndose explicar gráficamente que es estacionaria.
+
+```{r}
+corrgrx=ggAcf(deltax)
+corrgrz=ggAcf(deltaz)
+corrgrx
+corrgrz
+```
+
+Dicho fenomeno de estacionaridad se peude encontrar de igual forma en los graficos de ACF de ambas variables, donde en los diferentes lag, no hay ningun pico que alcanza la hipotesis nula de de autocorreacion, rechandose esta misma, llegando a la conlusion que los rezagos del pasado no tienen impacto mayor en el futuro.
+
+Para conocer la relacion de las variables, nuevamente se vuelve a hacer una regresion lineal entre ellas:
+
+```{r}
+modelo_xzdelta=lm(deltax~deltaz)
+as_flextable(modelo_xzdelta)
+```
+
+En este caso encontramos que las variables de diferencia x y z, no tienen significancia entre estas, resultando que no existirá correlación alguna entre dichas variables.
+
+```{r}
+estocasticodelta=modelo_xzdelta$residuals
+ggAcf(estocasticodelta)
+```
+
+Nuevamente en este proceso se encuentra un ruido blanco, ya que en ninguno de sus lags se alcanza a la hipotesis nula de correlacion, existiendo meramente aleatoridad entre estos errores a lo largo del tiempo. 
+
+## Ejercicio 
+
+¿Cuál de las dos estimaciones es mejor? ¿Por qué?
+
+Se podria decir que la segunda estimacion es la mejor debido que a pesar de que en el primer modelo se encuentre que entre las variables si habia correlacion, en esta no habia ruido blanco, siendo estos residuos no consistentes. Mientras que el segundo modelo aunque encontremos que no hay sifnificancia estadisitica al momento de explicar una variable con la otra, sus residuos se comportan de forma consistente, siendo este modelo respaldado estadisticamente. 
+
+
+
+
+recomendación de canción:
+https://www.youtube.com/watch?v=GG7fLOmlhYg
+
+
+
+
