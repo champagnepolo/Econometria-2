@@ -1,0 +1,187 @@
+---
+title: "Repaso Examen Final"
+author: "David Sanchez"
+date: "11/28/2021"
+output: 
+ html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: spacelab
+    highlight: kate
+---
+
+```{r setup_prog, include = FALSE, cache = FALSE}
+knitr::opts_chunk$set(
+  comment = NA, 
+  warning = FALSE, 
+  message = FALSE
+    )
+library(fontawesome)
+```
+
+Repaso para examen final de Econometria 2021-3 Uninorte.
+
+# Introducción series de tiempo
+
+## Caracteristicas
+Cuales son las caracteristicas de una serie de tiempo
+
+1. Los datos debe  estar en el mismo espacio de tiempo y en la misma frecuencia!. Las series de tiempo pueden tener un elemento temporal (variacion a lo largo del tiempo), componente estacional (ocurre en un misma frecuencia) y regular (aleatorio)
+
+2. Los datos encontrados en los peridos son realizaciones de una variable aleatoria. <strong>que es una relazacion de variable aleatoria?</strong> Esto quiere decir que en cada instancia del tiempo puede haber cualqueir valor.
+
+3. Un proceso de series de tiempo es una secuencia de variables aleatorias ordenadas temporalmente. Esto se le hace llamar <strong>proceso estocastico(aleatorio)</strong> . De esta manera cuando se realiza una recoleccion de datos durante el tiempo, se obtiene una realizacion del proceso estocastico. <strong> Solo se puede ver una unica realizacion, ya que no se puede volver en el tiempo e iniciar nuevamente el proceso.</strong>
+
+
+>However, if certain conditions in history had been different, we would generally obtain a different realization for the stochastic process, and this is why we think of time series data as the outcome of random variables. The set of all possible realiza- tions of a time series process plays the role of the population in cross-sectional analysis. The sample size for a time series data set is the number of time periods over which we observe the variables of interest.
+
+4. La serie de datos sera resultado de un proceso estocastico. Debido a que no se sabe su naturaleza 
+
+## Tipos de modelo
+
+### Modelo estatico
+
+Estas son parte de una realizacion contemporanea, es decir que todas sus variables se encuentran fijas en un periodo del tiempo. Entonces haciendo un ejemplo practico, se supone que se tiene los datos de una serie de tiempo para 
+
+$$\tag{1}y_t =\beta_0+\beta_1z_t+u_t$$
+Usualmente un modelo estatico es postulado cuando un cambio de $z$ en un tiempo $t$ afecta inmediatamente $y$. Siendo que $\Delta y_t=\beta_1 \Delta z_t, when  \Delta u_t=0 $
+
+Un ejemplo de estos modelos es la curva de Phillips dada de:
+
+$\tag{2} inf_t=\beta_0 +\beta_1 unemp_t + u_t$
+
+Estos modelos estaticos sirven para evidenciar el trade off entre $z$ y $y$.
+
+Para la curva de phillips se experimenta un desempleo natural la cual es constante y expectativas inflacionarias constantes, es por ello que esta curva se hace uso para ver el tradeoff entre desempleo e inflacion.
+
+## Rezagos distrbuidos finitos
+
+Rezago se le llama a las veces que tenemos que atrasar el periodo. Siendo el numero de veces que se le hace su orden. 
+
+Por ejemplo, esto seria un FDL
+
+$$\tag{3} y_t=\alpha_0+\delta_0 z_t +\delta_2 z_{t-1} + \delta_3 z_{t-2}+u_t$$
+Para hacer la interpretacion de la anterior regresion se hace el supuesto de que z es una constante ,igual a c, en todos los periodos del tiempo antes de t. En el tiempo t, esta incrementa una unidad (c+1) y este revierte en el periodo t+1. Para ocuparse del efecto seteris paribus de la afeccion de z en y, se establece que la variable de error es 0. De esta manera...
+
+$$y_{t-1}=\alpha_0 + \delta_0c +\delta_1c+\delta_2c$$
+$$y_{t}=\alpha_0 + \delta_0(c+1) +\delta_1c+\delta_2c$$
+$$y_{t+1}=\alpha_0 + \delta_0(c) +\delta_1{c+1}+\delta_2c$$
+$$y_{t+2}=\alpha_0 + \delta_0(c) +\delta_1{c}+\delta_2(c+1)$$
+
+$$y_{t+3}=\alpha_0 + \delta_0(c) +\delta_1{c}+\delta_2(c)$$
+El cambio de y debido a al incremento de una unidad en z (c+1) se le llama propensión al impacto o multiplicador de impacto. Siendo que 
+
+$$y_t-y_{t-1}=\delta_0$$
+Al igual los cambios de y se siguen produciendo peridos atrás, tras un cambio temporal.
+$$y_{t+1}-y_{t-1}=\delta_1$$
+$$y_{t+2}-y_{t-1}=\delta_2$$
+Ya en el periodo $y_{t-3}$, se rivirtio al proceso normal.
+$$y_{t+3}=y_{t-1}$$
+
+Esto debido a que se asumio que solo existen 2 lags.
+
+### Distribucion de Lags
+
+La grafica de $d_j$ en funcion de $j$, se le hace llamar distribucion de lags
+
+En estas distribuciones de lags basicamente se esta resumiendo el efecto dinamico temporal llevado por un cambio temporal de z en y. 
+
+Al tratar de mostrar como seria un choque permanente, la situacion posterior quedaria de la siguiente manera. Ocurruendo que en t se agrega una unidad a z de forma permanente, entonces $z_s=c$, $s<t$ y $z_s=c+1$, $s>=t$
+
+$$y_{t-1}=\alpha_0 + \delta_0c +\delta_1c+\delta_2c$$
+$$y_{t}=\alpha_0 + \delta_0(c+1) +\delta_1c+\delta_2c$$
+$$y_{t+1}=\alpha_0 + \delta_0(c+1) +\delta_1(c+1)+\delta_2c$$
+$$y_{t+2}=\alpha_0 + \delta_0(c+1) +\delta_1(c+1)+\delta_2(c+1)$$
+
+La sumatoria de coeficientes laggeados y actuales $\delta_0+\delta_1+\delta_2$ seria el cambio a largo plazo dado un incremento por siempre de z, se le llama a esto propencion a largo plazo o multiplicador a largo plazo 
+
+
+## Propiedades finitas MCO
+
+1. Los procesos de series temorales siguen un modelo que es lineal en sus parametros. 
+
+Dado un proceso estocastico ${(x_{t1},x_{t2},...,x_{tk}, y_t):t=1,2,...,n}$ sigue el modelo lineal
+
+$$y_t=\beta_0+\beta1x_{t1}+...+\beta_k x_{tk}+u_t$$
+2. No hay colimealidad perfecta 
+
+Las variables independientes no tiene perfcta combinacion lineal con las otras. 
+
+3. Media condional cero 
+
+Para cada periodo de tiempo, el valor esperado de error, dado todas las variables explicativas de todos los periodos, es sero. 
+
+$$E(u|X)=0, t=1,2,...,n$$
+Esto es una teoria crucial, debemos implicar que el error al momento t, $u_t$, esta uncorrelacionadocon todas las variables explicatorias de cada periodo. 
+
+Siempre el feedback de u en el furo de z es un problema 
+
+### Insesgamiento
+
+Se da cuando se cumple las propiedades 1 al 3 
+
+## Varianza del estimador MCO
+
+4. Homocedasticidad 
+
+Dado X, la varianza de u es la misma para todos los t $ Var(u_t|X) = Var(u_t) = \sigma^2, t=1,2,...,n$
+
+5. No hay correlacion serial 
+
+Los errores entre dos diferentes periodos son no correlacionados: $Corr(u_t, u_s |X)=0, para todo t ≠ s$
+
+Cuando hay problemas con la no correlacion ceral, se dice que hay correlacion cerial o autocorrelacion, dado que los errores estan correlacionados al pasar del tiempo. 
+
+Cumpliendose S1 al S5,  $Var(\hat{\beta}_j1\mathbf{X})=\dfrac{\sigma^2}{SST_j(1-R^2_j)}; \quad j=1,...,k$
+
+# Dependencia débil y estacionariedad
+
+Una variable es estrictamente exógena si es independiente de los contemporáneo, futuro y pasado en la ecuación relevante. 
+
+Dicho supuesto de exogenidad es bastante exigente. MCO no es insesgado si se viola dicho supuesto, pero si hay exogenidad contemporanea, MCO podra ser cosnsitente si tenemos dependencia debil, estacionaridad. 
+
+## Consistencia v.s. Insesgamiendo 
+
+Insesgamiento es cuando el parametro es igual al parametro poblacional. Mientras 
+Consistente es que cuando sus datos se acercan a infinito, su error tendera a 0. 
+
+## Estacionaridad 
+
+Un proceso estocastico son variables aleatorias indexadas por el tiempo 
+
+Cuando se hace la realizacion de dicho proceso, se obtienen los datos. 
+
+Entonces un proceso estocastico es estacionario si para cada coleccion de indices del tiempo, $1<t_1<t_2<...<t_m$, su distribucion de probabilidad conjunta de $(x_t,x_{t2},...,x_{tm}$ es la misma distribucion de probabilidad conjunta 
+
+>Stationarity requires even more. For example, the joint distribution of (x1, x2) (the first two terms in the sequence) must be the same as the joint distribution of (xt, xt+1) for any t >= 1. Again, this places no restrictions on how xt and xt11 are related to one another; indeed, they may be highly correlated. Stationarity does require that the nature of any correlation between adjacent terms is the same across all time periods.
+
+Si tengo una colección de variables aleatorias ordenadas en una secuencia y muevo esa secuencia h periodos adelante y la distribución de probabilidad conjunta no cambia, entonces decimos que el proceso es estacionario
+
+## Covarianza estacionaria 
+
+Dado un proceso estocastico, con un segundo momento finito, es estacionario cavariante si su Esperanza es constante $E(x_t)$ 2) su varianza es conssrante y si para alguna t, h>1, $Cov(x_t, x_t+h)$ depende solo de h y no de t.
+
+>How is stationarity used in time series econometrics? On a technical level, stationarity sim- plifies statements of the law of large numbers and the central limit theorem, although we will not worry about formal statements in this chapter. On a practical level, if we want to understand the relationship between two or more variables using regression analysis, we need to assume some sort of stability over time. If we allow the relationship between two variables (say, yt and xt) to change arbitrarily in each time period, then we cannot hope to learn much about how a change in one variable affects the other variable if we only have access to a single time series realization.
+In stating a multiple regression model for time series data, we are assuming a certain form of stationarity in that the bj do not change over time. Further, Assumptions TS.4 and TS.5 imply that the variance of the error process is constant over time and that the correlation between errors in two adjacent periods is equal to zero, which is clearly constant over time.
+
+## Dependencia debil
+
+Se dice que un proceso en covarianza es debilmente dependiente cuando su covarianza entre $x_t$ y $x_{t+1}$ tiende a 0 rapidamente cuando h tiende a infinito
+
+Entonces existira consistencia siempre que...
+
+TS1 El modelo es lineal y se cumple estacionariedad débil y dependencia débil
+
+
+
+TS2 No hay colinealidad perfecta
+
+
+
+TS3  Exogeneidad contemporánea
+
+
+
+Bajo TS1 a TS3 el estimador MCO es consistente
+
